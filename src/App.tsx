@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createClient, type Session } from "@supabase/supabase-js";
 
 // ---------- Supabase (.env richiesto) ----------
@@ -397,7 +397,7 @@ function Dashboard({ profile, onLogout }: { profile: Profile; onLogout: () => vo
                 </thead>
                 <tbody>
                   {days.flatMap(day => {
-                    const rows: JSX.Element[] = [];
+                    cconst rows: React.ReactElement[] = [];
                     if (!onlyToday) {
                       rows.push(
                         <tr key={`${day}-header`}>
