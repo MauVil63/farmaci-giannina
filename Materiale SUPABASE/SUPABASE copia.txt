@@ -1,0 +1,61 @@
+
+Bisoprololo 1.25 mg 1 compressa h 8
+Pantoprazolo 20 mg 1 compressa h 8
+Moduretic 5+50 mg 1 compressa h 8
+
+Lixiana 30 mg 1 compressa h 12
+
+Atorvastatina 20 mg 1 compressa h 21
+Slowmet 750 mg RP 1 compressa h 21
+
+SUPABASE
+Username: mvil@autonsistemi.it
+Password: Barcamena63!
+
+Organization: MauVil63
+Project name: Giannina Pharmacy
+Password: Scaramuouche?35
+
+Project URL: https://gnnnsuvjigsocryinqpg.supabase.co
+Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdubm5zdXZqaWdzb2NyeWlucXBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4NDA2OTgsImV4cCI6MjA3NjQxNjY5OH0.hzE2uwIEPVwsvGg6LJcivpd9bf9I46IBnbZRARezisQ 
+
+------------------------------------------------------------------------------------
+UTENTI
+
+ADMIN
+mvil@autonsistemi.it
+Password:
+Barcamena63!
+ANTO
+djinalliv@gmail.com
+Password: Brother!67 (oppure Brother67!  ??)
+
+DOME
+domenicovillani960@gmail.com
+Password: Brother!60
+
+UUID della famiglia: bc60f841-b92a-4833-b8af-c49c56abb438
+
+--------------------------------------------------------------------------------------
+  VITE v7.1.10  ready in 156 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
+^C
+MacBookPro:FarmaciGiannina macbook$ npm run dev npm run dev -- --host
+
+> farmaci-giannina@0.0.0 dev
+> vite npm run dev --host
+
+00:27:51 [vite] (client) Re-optimizing dependencies because vite config has changed
+
+  VITE v7.1.10  ready in 141 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.0.164:5173/
+  ➜  Network: http://10.211.55.2:5173/
+  ➜  Network: http://10.37.129.2:5173/
+  ➜  press h + enter to show help
+
+
