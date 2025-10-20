@@ -397,7 +397,7 @@ function Dashboard({ profile, onLogout }: { profile: Profile; onLogout: () => vo
                 </thead>
                 <tbody>
                   {days.flatMap(day => {
-                    cconst rows: React.ReactElement[] = [];
+                    const rows: React.ReactElement[] = [];
                     if (!onlyToday) {
                       rows.push(
                         <tr key={`${day}-header`}>
