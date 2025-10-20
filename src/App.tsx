@@ -240,20 +240,80 @@ function Dashboard({ profile, onLogout }: { profile: Profile; onLogout: () => vo
   useEffect(() => { loadWeek(); /* eslint-disable-next-line */ }, [profile.family_id, weekStart, onlyToday]);
 
   // toggle presa (log + scala Box)
-  const toggleTaken = async (day: string, time: TimeSlot, m: Med) => {
-    const k = `${day}|${time}|${m.id}`;
-    const next = !intakes[k];
-    setIntakes(s => ({ ...s, [k]: next }));
-    await sb!.from("intake_logs").upsert({ family_id: profile.family_id, day, time_slot: time, med_id: m.id, taken: next });
+// toggle presa (log + scala Box) — versione fix con delete su "uncheck"
+// aggiunge anche il parametro opzionale "force" per l'uso in bulk
 
-    // aggiorna Box
-    const { data: box } = await sb!.from("stocks").select("id,qty").eq("med_id", m.id).eq("location", "Box").single();
-    if (box) {
-      const newQty = Math.max(0, (box.qty || 0) + (next ? -m.per_dose : m.per_dose));
-      await sb!.from("stocks").update({ qty: newQty }).eq("id", box.id);
-      setStocks(st => ({ ...st, [m.id]: { ...(st[m.id] || { box: 0, dispensa: 0 }), box: newQty } }));
+const toggleTaken = async (
+  day: string,
+  time: TimeSlot,
+  m: Med,
+  force?: boolean
+) => {
+  const k = `${day}|${time}|${m.id}`;
+  const next = typeof force === "boolean" ? force : !intakes[k];
+
+  // aggiorna UI locale
+  setIntakes((s) => ({ ...s, [k]: next }));
+
+  if (next) {
+    // spunta → upsert con onConflict
+    const { error } = await sb!
+      .from("intake_logs")
+      .upsert(
+        { family_id: profile.family_id, day, time_slot: time, med_id: m.id, taken: true },
+        { onConflict: "family_id,day,time_slot,med_id" }
+      );
+    if (error) console.error("upsert intake_logs", error);
+  } else {
+    // togli spunta → DELETE (così al refresh non torna spuntato)
+    const { error } = await sb!
+      .from("intake_logs")
+      .delete()
+      .eq("family_id", profile.family_id)
+      .eq("day", day)
+      .eq("time_slot", time)
+      .eq("med_id", m.id);
+    if (error) console.error("delete intake_logs", error);
+  }
+
+  // aggiorna Box
+  const { data: box } = await sb!
+    .from("stocks")
+    .select("id,qty")
+    .eq("med_id", m.id)
+    .eq("location", "Box")
+    .single();
+
+  if (box) {
+    const newQty = Math.max(0, (box.qty || 0) + (next ? -m.per_dose : m.per_dose));
+    await sb!.from("stocks").update({ qty: newQty }).eq("id", box.id);
+    setStocks((st) => ({ ...st, [m.id]: { ...(st[m.id] || { box: 0, dispensa: 0 }), box: newQty } }));
+  }
+};
+/** Elenco (med,slot) pianificati per OGGI */
+function plannedDosesForToday(): { med: Med; slot: TimeSlot }[] {
+  const rows: { med: Med; slot: TimeSlot }[] = [];
+  TIMES.forEach((time) => {
+    meds.filter((m) => (m.times || []).includes(time)).forEach((m) => rows.push({ med: m, slot: time }));
+  });
+  return rows;
+}
+
+/** Spunta/annulla in blocco tutti i farmaci di oggi */
+async function markAllToday(checked: boolean) {
+  const day = todayISO();
+  const jobs: Promise<any>[] = [];
+  plannedDosesForToday().forEach(({ med, slot }) => {
+    const k = `${day}|${slot}|${med.id}`;
+    const cur = !!intakes[k];
+    if (cur !== checked) {
+      // riusa toggleTaken con "force" per uno stato preciso
+      jobs.push(toggleTaken(day, slot, med, checked));
     }
-  };
+  });
+  await Promise.all(jobs);
+  await loadWeek(); // riallinea eventuali sfalsamenti
+}
 
   // movimenti incrementali
   const moveFromPantry = async (m: Med, qty: number) => {
@@ -358,14 +418,37 @@ function Dashboard({ profile, onLogout }: { profile: Profile; onLogout: () => vo
         </select>
 
         {view === "planner" && (
-          <>
-            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8, fontSize: 14 }}>
-              <input type="checkbox" checked={onlyToday} onChange={(e) => setOnlyToday(e.target.checked)} />
-              Solo oggi
-            </label>
-            <button style={{ ...styles.btn, padding: "8px 12px" }} onClick={exportWeekPDF}>Esporta PDF</button>
-          </>
-        )}
+  <>
+    <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 8, fontSize: 14 }}>
+      <input type="checkbox" checked={onlyToday} onChange={(e) => setOnlyToday(e.target.checked)} />
+      Solo oggi
+    </label>
+
+    {onlyToday && (
+      <>
+        <button
+          style={{ ...styles.btn, padding: "8px 12px" }}
+          onClick={() => markAllToday(true)}
+          title="Segna tutti i farmaci di oggi come presi"
+        >
+          Spunta tutti oggi
+        </button>
+        <button
+          style={{ ...styles.btn, padding: "8px 12px", background: "#6c757d" }}
+          onClick={() => markAllToday(false)}
+          title="Annulla tutte le spunte di oggi"
+        >
+          Annulla tutti oggi
+        </button>
+      </>
+    )}
+
+    <button style={{ ...styles.btn, padding: "8px 12px" }} onClick={exportWeekPDF}>
+      Esporta PDF
+    </button>
+  </>
+)}
+
 
         {view === "stocks" && (
           <button style={{ ...styles.btn, padding: "8px 12px" }} onClick={() => setAdding(true)}>+ Aggiungi nuovo farmaco</button>
@@ -373,6 +456,7 @@ function Dashboard({ profile, onLogout }: { profile: Profile; onLogout: () => vo
       </div>
 
       {/* -------- Dose presa (planner settimanale) -------- */}
+
       {view === "planner" && (
         <Section title="Dose presa (planner settimanale)">
           {!onlyToday && (
